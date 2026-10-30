@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
+<title>chemitaafilms · vuestro recuerdo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pink:#D95668;
+    --black:#000;
+    --ink:#f2ecec;
+    --mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+    --ease:cubic-bezier(.22,.8,.24,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#000;color:var(--ink);font-family:var(--mono);-webkit-font-smoothing:antialiased;overflow:hidden}
+  img{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+  .screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .9s var(--ease),visibility 0s .9s}
+  .screen.on{opacity:1;visibility:visible;transition:opacity .9s var(--ease),visibility 0s}
+
+  /* ───────── 1. INTRO ───────── */
+  #burst{position:absolute;inset:0;opacity:0;transition:opacity .8s ease;pointer-events:none}
+  #burst.on{opacity:1}
+  #burst img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
+  #burst img.show{opacity:1}
+  #burst .veil{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,.25),rgba(0,0,0,.8));}
+  #loading{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;color:var(--pink);font-size:clamp(12px,1.5vw,16px);letter-spacing:.38em;text-transform:uppercase;opacity:0;transition:opacity 1s ease;padding:0 24px;text-shadow:0 0 24px rgba(0,0,0,.9)}
+  #loading.on{opacity:1}
+  #loading i{font-style:normal;display:inline-block;width:1.6em;text-align:left;letter-spacing:.1em}
+
+  /* ───────── 2. CONTRASEÑA ───────── */
+  #gate{padding:32px 24px;gap:0}
+  #gate .logo{width:clamp(120px,14vw,170px);margin-bottom:clamp(36px,7vh,64px);opacity:.95}
+  #gate .msg{max-width:560px;text-align:center;font-size:clamp(11px,1.25vw,13.5px);line-height:2;letter-spacing:.14em;text-transform:uppercase;color:rgba(242,236,236,.82);font-weight:300;opacity:0;transform:translateY(14px);filter:blur(6px);transition:all 1.3s var(--ease)}
+  #gate.on .msg{opacity:1;transform:none;filter:none;transition-delay:.2s}
+  #gate form{margin-top:clamp(34px,6vh,54px);width:min(360px,86vw);position:relative;opacity:0;transform:translateY(18px);filter:blur(6px);transition:all 1.4s var(--ease)}
+  #gate.on form{opacity:1;transform:none;filter:none;transition-delay:.6s}
+  #gate input{width:100%;background:transparent;border:0;border-bottom:1px solid rgba(217,86,104,.55);padding:14px 44px 14px 2px;color:var(--ink);font:400 16px var(--mono);letter-spacing:.3em;text-align:center;outline:none;caret-color:var(--pink);transition:border-color .4s,box-shadow .4s}
+  #gate input::placeholder{color:rgba(242,236,236,.25);letter-spacing:.3em}
+  #gate input:focus{border-color:var(--pink);box-shadow:0 14px 28px -18px var(--pink)}
+  #gate .go{position:absolute;right:0;bottom:6px;width:36px;height:36px;color:var(--pink);font-size:20px;transition:transform .3s var(--ease),opacity .3s;opacity:.8}
+  #gate .go:hover{transform:translateX(4px);opacity:1}
+  #err{height:18px;margin-top:18px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--pink);opacity:0;transition:opacity .4s;text-align:center}
+  #err.on{opacity:1}
+  .shake{animation:shake .5s cubic-bezier(.36,.07,.19,.97)}
+  @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+
+  /* ───────── 3. PANTALLA PRINCIPAL ───────── */
+  #home{gap:0;padding:24px}
+  #home .top{position:absolute;top:clamp(20px,4vh,36px);left:0;right:0;display:flex;justify-content:center}
+  #home .top img{width:clamp(96px,10vw,130px);opacity:.9}
+  #home .foot{position:absolute;bottom:clamp(16px,3vh,28px);left:0;right:0;text-align:center;font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:rgba(242,236,236,.28)}
+  .items{display:flex;gap:clamp(24px,8vw,140px);align-items:flex-end;justify-content:center;width:100%}
+  .item{position:relative;display:flex;flex-direction:column;align-items:center;gap:clamp(14px,2.4vh,26px);width:min(40vw,470px);text-decoration:none;color:inherit;cursor:pointer;opacity:0;-webkit-tap-highlight-color:transparent;outline:none}
+  .item .hint{font-size:clamp(9.5px,1vw,11.5px);letter-spacing:.3em;text-transform:uppercase;color:var(--pink);text-align:center;line-height:1.8;opacity:0;transition:opacity 1.2s ease .5s}
+  .item .lamp{position:relative;width:100%;--mx:50%;--my:46%;--lit:0}
+  /* haz de la linterna sobre cada elemento */
+  .item .lamp::before{content:"";position:absolute;left:50%;top:-48%;width:150%;height:150%;transform:translateX(-50%);background:conic-gradient(from 180deg at 50% 0%,transparent 160deg,rgba(255,236,236,.10) 180deg,transparent 200deg);filter:blur(22px);opacity:var(--lit);transition:opacity .9s ease;pointer-events:none}
+  .item .lamp::after{content:"";position:absolute;inset:-18% -14%;background:radial-gradient(ellipse at var(--mx) var(--my),rgba(217,86,104,.26),transparent 62%);opacity:var(--lit);transition:opacity .9s ease;pointer-events:none;mix-blend-mode:screen}
+  .item img{position:relative;z-index:1;width:100%;border-radius:6px;opacity:var(--lit);filter:brightness(.92) contrast(1.05);transition:opacity .9s ease,transform .8s var(--ease),filter .6s;
+    -webkit-mask-image:radial-gradient(ellipse 72% 78% at var(--mx) var(--my),#000 36%,rgba(0,0,0,.55) 66%,rgba(0,0,0,.08) 100%);
+            mask-image:radial-gradient(ellipse 72% 78% at var(--mx) var(--my),#000 36%,rgba(0,0,0,.55) 66%,rgba(0,0,0,.08) 100%)}
+  .item:hover img,.item:focus-visible img{transform:scale(1.025);filter:brightness(1.06) contrast(1.05)}
+  .item:active img{transform:scale(.99)}
+  #home.ready .item{opacity:1}
+  #home.ready .item .hint{opacity:1}
+  /* encendido tipo foco que parpadea */
+  .item.flick .lamp{animation:flicker 1.7s steps(1,end) forwards}
+  @keyframes flicker{0%{--lit:0}6%{--lit:.9}9%{--lit:.1}14%{--lit:.7}18%{--lit:0}30%{--lit:.4}36%{--lit:0}52%{--lit:1}58%{--lit:.55}66%{--lit:1}100%{--lit:1}}
+  @property --lit{syntax:'<number>';inherits:true;initial-value:0}
+  .item.lit .lamp{--lit:1}
+
+  #album-wrap{perspective:1400px}
+  #album{transform-origin:left center;transform-style:preserve-3d}
+  #album.opening{animation:openAlbum 1.1s var(--ease) forwards}
+  @keyframes openAlbum{
+    0%{transform:none;opacity:1}
+    35%{transform:scale(1.06) rotateY(-6deg)}
+    100%{transform:scale(1.35) rotateY(-62deg) translateX(-6%);opacity:0;filter:brightness(2.2)}
+  }
+  #home.leaving .item.cass,#home.leaving .top,#home.leaving .foot{opacity:0;transition:opacity .7s ease}
+  #home.leaving .item.alb .hint{opacity:0;transition:opacity .4s}
+
+  /* ───────── 4. GALERÍA ───────── */
+  #gallery{position:fixed;inset:0;background:rgba(0,0,0,0);overflow-y:auto;overflow-x:hidden;opacity:0;visibility:hidden;z-index:20;transition:background 1s ease,opacity .5s ease,visibility 0s .8s;-webkit-overflow-scrolling:touch}
+  #gallery.on{visibility:visible;opacity:1;background:#000;transition:background 1s ease .15s,opacity .2s ease,visibility 0s}
+  #gallery header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:18px clamp(16px,3vw,40px);background:linear-gradient(#000 40%,transparent);opacity:0;transition:opacity 1s ease 1s}
+  #gallery.on header{opacity:1}
+  #gallery header img{height:34px;width:auto;opacity:.9}
+  #gallery header .dl{position:absolute;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#000;background:var(--pink);padding:11px 20px;border-radius:2px;text-decoration:none;white-space:nowrap;transition:background .3s,color .3s,box-shadow .4s}
+  #gallery header .dl:hover{background:#000;color:var(--pink);box-shadow:inset 0 0 0 1px var(--pink)}
+  .back{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--pink);padding:10px 2px;position:relative}
+  .back::after{content:"";position:absolute;left:0;right:0;bottom:6px;height:1px;background:var(--pink);transform:scaleX(0);transform-origin:left;transition:transform .4s var(--ease)}
+  .back:hover::after{transform:scaleX(1)}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,1vw,16px);padding:12px clamp(12px,3vw,40px) 90px;max-width:1500px;margin:0 auto}
+  .ph{position:relative;overflow:hidden;border-radius:4px;cursor:zoom-in;opacity:0;background:#0b0b0b;aspect-ratio:3/2;will-change:transform,opacity}
+  .ph img{width:100%;height:100%;object-fit:contain;transition:transform 1.2s var(--ease)}
+  .ph:hover img{transform:scale(1.03)}
+  .ph::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);border-radius:4px;pointer-events:none}
+  @media (max-width:760px){
+    .grid{grid-template-columns:1fr}
+    #gallery header{flex-wrap:wrap;gap:6px}
+    #gallery header .dl{position:static;transform:none;order:3;width:100%;text-align:center}
+    .items{flex-direction:column-reverse;align-items:center;gap:clamp(34px,6vh,56px)}
+    .item{width:min(74vw,360px)}
+    #home{justify-content:center;padding-top:72px;padding-bottom:40px}
+  }
+
+  /* lightbox */
+  #lb{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .45s ease,visibility 0s .45s}
+  #lb.on{opacity:1;visibility:visible;transition:opacity .45s ease}
+  #lb img{max-width:92vw;max-height:88vh;border-radius:3px;box-shadow:0 30px 80px rgba(0,0,0,.8);transition:opacity .25s}
+  #lb button{position:absolute;color:var(--pink);font-size:11px;letter-spacing:.28em;text-transform:uppercase;padding:16px}
+  #lb .x{top:10px;right:14px}
+  #lb .p{left:6px;top:50%;font-size:24px;letter-spacing:0}
+  #lb .n{right:6px;top:50%;font-size:24px;letter-spacing:0}
+
+  #toast{position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);background:#0c0c0c;border:1px solid rgba(217,86,104,.5);color:var(--ink);font-size:11px;letter-spacing:.2em;text-transform:uppercase;padding:14px 20px;opacity:0;pointer-events:none;transition:all .5s var(--ease);z-index:60;text-align:center}
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+
+<!-- 1 · INTRO -->
+<section id="intro" class="screen on" style="transition:none">
+  <div id="burst"></div>
+  <div id="loading">cargando vuestro recuerdo<i id="dots"></i></div>
+</section>
+
+<!-- 2 · CONTRASEÑA -->
+<section id="gate" class="screen">
+  <img class="logo" src="img/logo.jpg" alt="chemitaafilms">
+  <p class="msg">Escribe la contraseña que os dio Chema para desbloquear el recuerdo inolvidable del día de vuestras vidas</p>
+  <form id="form" autocomplete="off">
+    <input id="pw" type="password" placeholder="· · · · · · ·" aria-label="Contraseña" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <button class="go" type="submit" aria-label="Entrar">→</button>
+    <p id="err">Esa no es. Inténtalo otra vez</p>
+  </form>
+</section>
+
+<!-- 3 · PANTALLA PRINCIPAL -->
+<section id="home" class="screen">
+  <div class="top"><img src="img/logo.jpg" alt="chemitaafilms"></div>
+  <div class="items">
+    <a class="item alb" id="btn-album" role="button" tabindex="0" aria-label="Ver tus fotos">
+      <span class="hint">Ve tus fotos<br>pulsando aquí</span>
+      <div class="lamp" id="album-wrap"><img id="album" src="img/album.jpg" alt="Álbum de fotos"></div>
+    </a>
+    <a class="item cass" id="btn-cassette" href="#" target="_blank" rel="noopener" aria-label="Ver tu película">
+      <span class="hint">Mira tu película<br>pulsando aquí</span>
+      <div class="lamp"><img src="img/cassette.jpg" alt="Cassette con tu película"></div>
+    </a>
+  </div>
+  <div class="foot">born to create</div>
+</section>
+
+<!-- 4 · GALERÍA -->
+<div id="gallery" aria-hidden="true">
+  <header>
+    <img src="img/logo.jpg" alt="chemitaafilms">
+    <a class="dl" href="https://we.tl/t-xcq655XrjxsiUP0b" target="_blank" rel="noopener">Descarga tus fotos</a>
+    <button class="back" id="back">← Volver</button>
+  </header>
+  <div class="grid" id="grid"></div>
+</div>
+
+<div id="lb"><button class="x" aria-label="Cerrar">Cerrar ✕</button><button class="p" aria-label="Anterior">‹</button><img alt=""><button class="n" aria-label="Siguiente">›</button></div>
+<div id="toast"></div>
+
+<script>
+/* ═════════════ CONFIGURACIÓN ═════════════ */
+const VIDEO_URL = "https://we.tl/t-qcst0B4mLrcbbhXL";   // enlace de la película (cassette)
+const PASS_HASH = 3721620055061669; // "lamejorbodadelaño"
+const PHOTOS = Array.from({length:18},(_,i)=>`img/foto-${String(i+1).padStart(2,'0')}.jpg`);
+const BURST = PHOTOS.slice(0,10); // fotos de la ráfaga inicial
+/* ═══════════════════════════════════════ */
+
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* hash sencillo (cyrb53) — la clave no aparece en claro en el código */
+function cyrb53(str, seed=0){
+  let h1=0xdeadbeef^seed, h2=0x41c6ce57^seed;
+  for(let i=0,ch;i<str.length;i++){ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+  h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return 4294967296*(2097151&h2)+(h1>>>0);
+}
+const norm = s => s.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'');
+
+/* ───────── INTRO ───────── */
+async function preload(srcs){
+  await Promise.all(srcs.map(src=>new Promise(res=>{const i=new Image();i.onload=i.onerror=res;i.src=src;i.decode&&i.decode().then(res,res)})));
+}
+async function intro(){
+  const burst = $('#burst');
+  const imgs = BURST.map(src=>{const i=document.createElement('img');i.src=src;burst.appendChild(i);return i});
+  burst.insertAdjacentHTML('beforeend','<div class="veil"></div>');
+  const loaded = preload([...BURST,'img/logo.jpg','img/album.jpg','img/cassette.jpg']);
+
+  await sleep(1000);                 // 1 s de negro
+  await loaded;
+
+  burst.classList.add('on');
+  $('#loading').classList.add('on');
+  const dots = $('#dots'); let d=0;
+  const dotTimer = setInterval(()=>{d=(d+1)%4;dots.textContent='.'.repeat(d)},380);
+
+  // ráfaga: 2 vueltas, mezcladas, difuminándose progresivamente
+  const order = [...imgs.keys()];
+  const seq = [...order, ...order.slice().sort(()=>Math.random()-.5)];
+  const step = 115, total = seq.length*step;
+  const t0 = performance.now();
+  let prev = null;
+  for(const idx of seq){
+    prev && prev.classList.remove('show');
+    const el = imgs[idx]; el.classList.add('show'); prev = el;
+    const p = Math.min((performance.now()-t0)/total,1);
+    const blur = p*p*34, br = 1 - p*.55, sc = 1 + p*.12;
+    burst.style.filter = `blur(${blur.toFixed(1)}px) brightness(${br.toFixed(2)})`;
+    burst.style.transform = `scale(${sc.toFixed(3)})`;
+    await sleep(step);
+  }
+  await sleep(250);
+  // se van por completo
+  burst.style.transition = 'opacity .9s ease, filter .9s ease';
+  burst.style.filter = 'blur(50px) brightness(0)';
+  burst.classList.remove('on');
+  await sleep(600);
+  $('#loading').classList.remove('on');
+  await sleep(1000);
+  clearInterval(dotTimer);
+  $('#intro').classList.remove('on');
+  $('#gate').classList.add('on');
+  setTimeout(()=>$('#pw').focus({preventScroll:true}),1400);
+}
+
+/* ───────── CONTRASEÑA ───────── */
+$('#form').addEventListener('submit', e=>{
+  e.preventDefault();
+  const v = norm($('#pw').value);
+  if(cyrb53(v) === PASS_HASH){
+    $('#err').classList.remove('on');
+    $('#gate').classList.remove('on');
+    $('#pw').blur();
+    setTimeout(showHome, 900);
+  }else{
+    const f = $('#form'); f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake');
+    $('#err').classList.add('on'); $('#pw').select();
+  }
+});
+$('#pw').addEventListener('input',()=>$('#err').classList.remove('on'));
+
+/* ───────── PANTALLA PRINCIPAL ───────── */
+function showHome(){
+  const home = $('#home');
+  home.classList.add('on','ready');
+  const alb = $('.item.alb'), cas = $('.item.cass');
+  setTimeout(()=>alb.classList.add('flick'), 500);
+  setTimeout(()=>cas.classList.add('flick'), 1300);
+  setTimeout(()=>{alb.classList.add('lit');cas.classList.add('lit')}, 3300);
+  // la luz sigue al cursor / dedo dentro de cada elemento
+  document.querySelectorAll('.item').forEach(it=>{
+    const lamp = it.querySelector('.lamp');
+    it.addEventListener('pointermove',e=>{
+      const r = lamp.getBoundingClientRect();
+      lamp.style.setProperty('--mx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');
+      lamp.style.setProperty('--my',((e.clientY-r.top)/r.height*100).toFixed(1)+'%');
+    });
+    it.addEventListener('pointerleave',()=>{lamp.style.setProperty('--mx','50%');lamp.style.setProperty('--my','46%')});
+  });
+}
+
+/* cassette → vídeo */
+$('#btn-cassette').addEventListener('click', e=>{
+  if(!VIDEO_URL){ e.preventDefault(); toast('El enlace del vídeo estará disponible muy pronto'); return; }
+  e.currentTarget.href = VIDEO_URL;
+});
+
+/* ───────── ÁLBUM → GALERÍA ───────── */
+const grid = $('#grid'), gallery = $('#gallery');
+PHOTOS.forEach((src,i)=>{
+  const d = document.createElement('div'); d.className='ph'; d.dataset.i=i;
+  d.innerHTML = `<img src="${src}" alt="Recuerdo ${i+1}" loading="eager" draggable="false">`;
+  d.addEventListener('click',()=>openLB(i));
+  grid.appendChild(d);
+});
+
+let busy = false;
+async function openAlbum(){
+  if(busy) return; busy = true;
+  const album = $('#album'), home = $('#home');
+  const ar = album.getBoundingClientRect();
+  const cx = ar.left + ar.width/2, cy = ar.top + ar.height/2;
+
+  album.classList.add('opening');
+  home.classList.add('leaving');
+  gallery.classList.add('on'); gallery.setAttribute('aria-hidden','false');
+  gallery.scrollTop = 0;
+  await sleep(380);
+
+  // las fotos salen despedidas del álbum, cada una a su ritmo
+  const phs = [...grid.children];
+  phs.forEach((el,i)=>{
+    const r = el.getBoundingClientRect();
+    const dx = cx-(r.left+r.width/2), dy = cy-(r.top+r.height/2);
+    const rot0 = (Math.random()*70-35), rotMid = (Math.random()*16-8);
+    const dur = 1150 + Math.random()*650, delay = i*70 + Math.random()*120;
+    const overX = -dx*.06, overY = -dy*.06;
+    el.style.opacity = 0;
+    el.animate([
+      {opacity:0, transform:`translate(${dx}px,${dy}px) scale(.12) rotate(${rot0}deg)`, filter:'blur(8px)', offset:0},
+      {opacity:1, transform:`translate(${overX}px,${overY}px) scale(1.06) rotate(${rotMid}deg)`, filter:'blur(0)', offset:.72},
+      {opacity:1, transform:'translate(0,0) scale(1) rotate(0deg)', filter:'blur(0)', offset:1}
+    ],{duration:dur,delay,easing:'cubic-bezier(.22,.8,.3,1)',fill:'both'}).onfinish = ()=>{el.style.opacity=1};
+  });
+  await sleep(3600);
+  busy = false;
+}
+function closeGallery(){
+  gallery.classList.remove('on'); gallery.setAttribute('aria-hidden','true');
+  setTimeout(()=>{
+    const album = $('#album'), home = $('#home');
+    album.classList.remove('opening'); home.classList.remove('leaving');
+    grid.querySelectorAll('.ph').forEach(el=>{el.getAnimations().forEach(a=>a.cancel());el.style.opacity=0});
+  },850);
+}
+$('#btn-album').addEventListener('click',openAlbum);
+$('#btn-album').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAlbum()}});
+$('#back').addEventListener('click',closeGallery);
+
+/* ───────── LIGHTBOX ───────── */
+const lb = $('#lb'), lbImg = $('#lb img'); let cur = 0;
+function openLB(i){cur=i;lbImg.src=PHOTOS[i];lb.classList.add('on')}
+function stepLB(n){cur=(cur+n+PHOTOS.length)%PHOTOS.length;lbImg.style.opacity=0;setTimeout(()=>{lbImg.src=PHOTOS[cur];lbImg.style.opacity=1},180)}
+lb.addEventListener('click',e=>{ if(e.target===lb||e.target.classList.contains('x')) lb.classList.remove('on') });
+$('#lb .p').addEventListener('click',e=>{e.stopPropagation();stepLB(-1)});
+$('#lb .n').addEventListener('click',e=>{e.stopPropagation();stepLB(1)});
+document.addEventListener('keydown',e=>{
+  if(lb.classList.contains('on')){
+    if(e.key==='Escape') lb.classList.remove('on');
+    if(e.key==='ArrowLeft') stepLB(-1);
+    if(e.key==='ArrowRight') stepLB(1);
+  }else if(e.key==='Escape' && gallery.classList.contains('on')) closeGallery();
+});
+let tx=0; lb.addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});
+lb.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)stepLB(d<0?1:-1)});
+
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),3200)}
+
+intro();
+</script>
+</body>
+</html>
